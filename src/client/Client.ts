@@ -1,5 +1,5 @@
 import Discord from 'discord.js';
-import { getConnection, getRepository } from 'typeorm';
+import { getRepository } from 'typeorm';
 
 import { DiscordServer } from './model';
 import { chatMatchService } from '../chat_match/service';
@@ -45,40 +45,13 @@ export class CoffeeBreak {
     public async messageListener(msg: Discord.Message) {
         const discordClient = new CoffeeBreak().client;
         const guildId = msg.guild.id;
-        const channelId = msg.channel.id;
-
-        const currentServer = await getRepository(DiscordServer).findOne({ id: guildId });
 
         if (msg.author.id === discordClient.user.id) return;
         if (!msg.mentions.has(discordClient.user)) return;
 
         if (msg.content.includes("schedule:")) {
-            const response = await chatMatchService.addSchedule(guildId, msg.content);
+            const response = await chatMatchService.addSchedule(guildId, msg.content, msg.channel.id);
             msg.reply(response);
         }
-
-        // msg.channel.fetch().then((channel: Discord.Channel) => {
-        //     console.log(channel.id);
-        // });
-        // msg.guild.fetch().then((guild: Discord.Guild) => {
-        //     console.log(guild.id);
-        //     msg.guild.members.fetch().then((members: Collection<string, Discord.GuildMember>) => {
-        //         members.forEach((member: GuildMember) => {
-        //             if (member.nickname === "ege") {
-        //                 // msg.channel.send(`${msg.content} ${member.user}`);
-        //                 msg.channel.send(`Yarın ofise gelecek olanlar ✅ emojisine bassın. 5 kişi basınca çekiliş kapanacak :)`)
-        //                     .then((sentMessage: Discord.Message) => {
-        //                         sentMessage.react("✅");
-        //                         // sentMessage.awaitReactions
-        //                     });
-        //             }
-        //         });
-        //     }).catch(console.error);
-
-        //     guild.channels.cache.forEach((channel: Discord.GuildChannel) => {
-        //         (channel as Discord.TextChannel)?.messages?.fetch({limit: 100})
-        //             .then(console.log);
-        //     });
-        // });
     }
 }

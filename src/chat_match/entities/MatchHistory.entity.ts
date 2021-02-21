@@ -20,6 +20,15 @@ class MatchHistory {
 
     @ManyToOne(type => DiscordServer, server => server.matchHistory)
     server: DiscordServer;
+
+    @Column({ name: "channel_id" })
+    channelId: string;
+
+    @Column({ name: "deleted_channel", default: false })
+    deletedChannel: boolean;
+
+    @Column({ name: "parent_group" })
+    parentGroup: string;
 }
 
 const matchHistoryArrayFields = [
@@ -37,7 +46,9 @@ const matchHistoryHandler: ProxyHandler<MatchHistory> = {
         if (matchHistoryArrayFields.includes(sKey.toString())) {
             if (!isArray(vValue)) return false;
             oTarget[sKey] = vValue.join(",");
+            return true;
         }
+        oTarget[sKey] = vValue
         return true;
     }
 }

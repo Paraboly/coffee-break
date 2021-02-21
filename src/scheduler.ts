@@ -1,10 +1,22 @@
 import cron from "cron-scheduler";
 
+interface ICron {
+    [cronId: string]: cron;
+}
+
 export default class Scheduler {
-    static addCron(cronString, callback) {
-        cron({
+    static cronsMap: ICron = {};
+
+    static addCron(cronString, cronId, callback) {
+        const job = cron({
             on: cronString,
         }, callback);
+        this.cronsMap[cronId] = job;
+    }
+
+    static removeJob(cronId: string) {
+        this.cronsMap[cronId]?.stop();
+        delete this.cronsMap[cronId];
     }
 }
 

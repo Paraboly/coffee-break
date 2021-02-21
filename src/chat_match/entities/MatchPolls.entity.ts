@@ -37,7 +37,9 @@ const matchPollsHandler: ProxyHandler<MatchPolls> = {
         if (matchPollsArrayFields.includes(sKey.toString())) {
             if (!isArray(vValue)) return false;
             oTarget[sKey] = vValue.join(",");
+            return true;
         }
+        oTarget[sKey] = vValue
         return true;
     }
 }
