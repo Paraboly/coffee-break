@@ -114,11 +114,12 @@ class ChatMatchService {
                             ?.filter(user => user.id !== coffeBreak.client.user.id)
                             ?.map(u => u);
                         if (!attendeeList) return;
+                        this.savePoll(attendeeList, guild.id);
 
                         msg.channel
                             .send(`${attendeeList.reduce((acc, curr) => acc + ` <@${curr.id}>`, '')} have reacted. Matching people now`);
                         
-                        const matchList = self.matchUsers(attendeeList, schedule.matchSize, guild.id);
+                        const matchList = self.matchUsers(attendeeList, schedule.matchSize);
 
                         const parentRoom = await this.createParentRoom(guild);
                         for (const matchedGroup of matchList) {
@@ -131,21 +132,11 @@ class ChatMatchService {
             });
     }
 
-    private matchUsers(attendeeList: Discord.User[], groupSize: number, serverId: string): Discord.User[][] {
+    private matchUsers(attendeeList: Discord.User[], groupSize: number): Discord.User[][] {
         const matches = chain(attendeeList)
             .shuffle()
             .chunk(groupSize)
             .value();
-
-        for (const match of matches) {
-            const matchPoll = new Proxy(new MatchPolls(), matchPollsHandler);
-            matchPoll.serverId = serverId;
-            matchPoll.pollDate = new Date();
-            // @ts-ignore: Implicit conversion is done
-            matchPoll.attendees = match.map(user => user.id);
-            getRepository(MatchPolls).save(matchPoll);
-        }
-
         return matches;
     }
 
@@ -190,6 +181,15 @@ class ChatMatchService {
         newHistoryData.serverId = guild.id;
         newHistoryData.parentGroup = parentRoom.id;
         getRepository(MatchHistory).save(newHistoryData);
+    }
+
+    private async savePoll(attendees: Discord.User[], serverId: string) {
+        const matchPoll = new Proxy(new MatchPolls(), matchPollsHandler);
+        matchPoll.serverId = serverId;
+        matchPoll.pollDate = new Date();
+        // @ts-ignore: Implicit conversion is done
+        matchPoll.attendees = attendees.map(user => user.id);
+        getRepository(MatchPolls).save(matchPoll);
     }
 
     private async deleteOldRooms(guild: Discord.Guild) {

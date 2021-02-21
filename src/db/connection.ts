@@ -11,7 +11,10 @@ class DbConnection {
             database: "database.sqlite",
             entities: [DiscordServer, MatchHistory, MatchPolls, MatchSchedule]
         })
-        .then(() => console.log("created connection"))
+        .then(async (connection) => {
+            // await connection.synchronize(false);
+            console.log("created connection");
+        })
         .catch(console.error);
     }
 }
