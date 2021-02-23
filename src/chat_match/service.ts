@@ -12,6 +12,7 @@ import { DiscordServer } from '../client/model';
 import randomName from '../utils/name-generator';
 import { MatchHistory, matchHistoryHandler } from './entities/MatchHistory.entity';
 import { MatchPolls, matchPollsHandler } from './entities/MatchPolls.entity';
+import parseCommand from '../utils/command-parser';
 
 class ChatMatchService {
     async addSchedule(guildId: string, msgContent: string, channelId: string): Promise<string> {
@@ -170,11 +171,35 @@ class ChatMatchService {
             ],
             parent: parentRoom
         });
-        newChannel.send(`You are matched! Start chatting. You can ask your friend about the challanges they faced in last few weeks, ` +
+
+        const newVoiceChannel = await guild.channels.create(randomName(), {
+            type: "voice",
+            permissionOverwrites: [
+                {
+                    id: everyoneRole.id,
+                    deny: ['VIEW_CHANNEL']
+                },
+                {
+                    id: guild.client.user.id,
+                    allow: ['MANAGE_CHANNELS', 'VIEW_CHANNEL']
+                },
+                ...attendees.map(user => {
+                    return ({
+                        id: user.id,
+                        allow: ['VIEW_CHANNEL', 'CONNECT', 'SPEAK']
+                    } as Discord.OverwriteResolvable);
+                })
+            ],
+            parent: parentRoom
+        });
+
+        await newChannel.send(`You are matched! Plan your virtual chat, and start talking. You can ask your friend about the challanges they faced in last few weeks, ` +
             `or any new hobbies that they are getting into.`);
+        await newChannel.send(`${attendees.reduce((acc, curr) => acc + ` <@${curr.id}>`, '')}`);
         
         const newHistoryData = new Proxy(new MatchHistory(), matchHistoryHandler);
         newHistoryData.channelId = newChannel.id;
+        newHistoryData.voiceChannelId = newVoiceChannel.id;
         newHistoryData.matchDate = new Date();
         // @ts-ignore: Arrays are implicitly cast to string
         newHistoryData.matchedUsers = attendees.map(att => att.id);
@@ -201,6 +226,7 @@ class ChatMatchService {
         await guild.channels.cache.find(ch => ch.id === parentId)?.delete();
         for (const history of historyList) {
             await guild.channels.cache.find(ch => ch.id === history.channelId)?.delete();
+            await guild.channels.cache.find(ch => ch.id === history.voiceChannelId)?.delete();
             history.deletedChannel = true;
             getRepository(MatchHistory).save(history);
         }

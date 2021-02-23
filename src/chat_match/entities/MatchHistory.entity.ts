@@ -29,6 +29,9 @@ class MatchHistory {
 
     @Column({ name: "parent_group" })
     parentGroup: string;
+
+    @Column({ name: "voice_channel_id" })
+    voiceChannelId: string;
 }
 
 const matchHistoryArrayFields = [
